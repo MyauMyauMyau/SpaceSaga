@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: dc770c90a1d2e804188d6f95a43ab26b
+timeCreated: 1458392073
+licenseType: Pro
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - SpaceObjectPrefab: {fileID: 121572, guid: 239528892e54990488f77b66fdb3d507, type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
