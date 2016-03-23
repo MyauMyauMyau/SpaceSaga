@@ -3,29 +3,55 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Assets.scripts;
 
 public class SpaceObject : MonoBehaviour
 {
 	public Coordinate GridPosition { get; set; }
+	public Vector3 Destination { get; set; }
 	public SpaceObjectType TypeOfObject { get; private set;}
-	public static Material BlueAsteroidMaterial = Resources.Load("BlueAsteroidMaterial", typeof(Material)) as Material;
-	public static Material GreenAsteroidMaterial = Resources.Load("GreenAsteroidMaterial", typeof(Material)) as Material;
-	public static Material RedAsteroidMaterial = Resources.Load("RedAsteroidMaterial", typeof(Material)) as Material;
-	public static Material VioletAsteroidMaterial = Resources.Load("VioletAsteroidMaterial", typeof(Material)) as Material;
-	public static Material YellowAsteroidMaterial = Resources.Load("YellowAsteroidMaterial", typeof(Material)) as Material;
+	public static Sprite BlueAsteroidSprite = Resources.Load("1met_blue", typeof(Sprite)) as Sprite;
+	public static Sprite GreenAsteroidSprite = Resources.Load("1met_green", typeof(Sprite)) as Sprite;
+	public static Sprite RedAsteroidSprite = Resources.Load("1met_red", typeof(Sprite)) as Sprite;
+	public static Sprite PurpleAsteroidSprite = Resources.Load("1met_purple", typeof(Sprite)) as Sprite;
+	public static Sprite YellowAsteroidSprite = Resources.Load("1met_yellow", typeof(Sprite)) as Sprite;
 	public SpaceObjectState State { get; private set; }
+	public bool UpdatedField = false;
+	public bool IsAsteroid()
+	{
+		return AsteroidTypes.Contains(TypeOfObject);
+	}
+
+	public void DestroyAsteroid()
+	{
+		Destroy(gameObject);
+	}
 	public void Initialise(int x, int y, char type)
 	{
 		GridPosition = new Coordinate(x,y);
 		TypeOfObject = CharsToObjectTypes[type];
-		gameObject.GetComponent<Renderer>().material = SpaceObjectTypesToMaterials[TypeOfObject];
+		gameObject.GetComponent<SpriteRenderer>().sprite = SpaceObjectTypesToSprites[TypeOfObject];
 		State = SpaceObjectState.Default;
 	}
 
 	void Update()
 	{
-		if (State == SpaceObjectState.Clicked)
+		if (State == SpaceObjectState.Moving)
+		{
+			if (transform.position.Equals(Destination))
+			{
+				State = SpaceObjectState.Default;
+				StartCoroutine(GameField.UpdateField());
+			}
+			else
+			{
+				
+				float step = 2f * Time.deltaTime;
+				transform.position = Vector3.MoveTowards(transform.position, Destination, step);
+			}
+		}
+		else if (State == SpaceObjectState.Clicked)
 		{
 			gameObject.GetComponentInChildren<Light>().enabled = true;
 		}
@@ -34,7 +60,6 @@ public class SpaceObject : MonoBehaviour
 	}
 	void OnMouseDown()
 	{
-		Debug.Log(GridPosition.X + " " + GridPosition.Y);
 		if (State == SpaceObjectState.Default)
 		{
 			if (GameField.ClickedObject == null)
@@ -65,22 +90,37 @@ public class SpaceObject : MonoBehaviour
 		}
 	}
 
+	public void Move(Vector3 destination)
+	{
+		State = SpaceObjectState.Moving;
+		Destination = destination;
+	}
+
 	private static readonly Dictionary<char, SpaceObjectType> CharsToObjectTypes = new Dictionary<char, SpaceObjectType>
 	{
 		{ 'G', SpaceObjectType.GreenAsteroid},
 		{ 'R', SpaceObjectType.RedAsteroid},
 		{ 'B', SpaceObjectType.BlueAsteroid},
-		{ 'V', SpaceObjectType.VioletAsteroid},
+		{ 'P', SpaceObjectType.PurpleAsteroid},
 		{ 'Y', SpaceObjectType.YellowAsteroid},
 		{ 'H', SpaceObjectType.BlackHole},
 	};
-	private static readonly Dictionary<SpaceObjectType, Material> SpaceObjectTypesToMaterials = new Dictionary<SpaceObjectType,Material>
+	private static readonly Dictionary<SpaceObjectType, Sprite> SpaceObjectTypesToSprites = new Dictionary<SpaceObjectType, Sprite>
 	{
-		{SpaceObjectType.GreenAsteroid, GreenAsteroidMaterial},
-		{SpaceObjectType.RedAsteroid, RedAsteroidMaterial},
-		{SpaceObjectType.BlueAsteroid, BlueAsteroidMaterial},
-		{SpaceObjectType.VioletAsteroid, VioletAsteroidMaterial},
-		{SpaceObjectType.YellowAsteroid, YellowAsteroidMaterial},
+		{SpaceObjectType.GreenAsteroid, GreenAsteroidSprite},
+		{SpaceObjectType.RedAsteroid, RedAsteroidSprite},
+		{SpaceObjectType.BlueAsteroid, BlueAsteroidSprite},
+		{SpaceObjectType.PurpleAsteroid, PurpleAsteroidSprite},
+		{SpaceObjectType.YellowAsteroid, YellowAsteroidSprite},
+	};
+
+	private static readonly List<SpaceObjectType> AsteroidTypes = new List<SpaceObjectType>()
+	{
+		SpaceObjectType.GreenAsteroid,
+		SpaceObjectType.RedAsteroid,
+		SpaceObjectType.YellowAsteroid,
+		SpaceObjectType.BlueAsteroid,
+		SpaceObjectType.PurpleAsteroid
 	};
 
 }

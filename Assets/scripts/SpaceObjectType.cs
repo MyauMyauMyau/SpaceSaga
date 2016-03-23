@@ -9,7 +9,7 @@ namespace Assets.scripts
 	{
 		BlueAsteroid,
 		RedAsteroid,
-		VioletAsteroid,
+		PurpleAsteroid,
 		YellowAsteroid,
 		GreenAsteroid,
 		BlackHole

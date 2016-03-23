@@ -8,6 +8,7 @@ namespace Assets.scripts
 	public enum SpaceObjectState
 	{
 		Default,
-		Clicked
+		Clicked,
+		Moving
 	}
 }
