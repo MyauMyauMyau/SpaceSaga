@@ -1,25 +1,27 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Assets.scripts;
-using Newtonsoft.Json;
+//using Newtonsoft.Json;
 namespace Assets.scripts
 {
 	public class Game : MonoBehaviour
 	{
 
 		// Use this for initialization
-		public GameObject SpaceObjectPrefab;
+		public static GameObject SpaceObjectPrefab = Resources.Load("SpaceObjectPrefab", typeof(GameObject)) as GameObject;
 		public const int MAP_SIZE = 8;
 		private LevelInfo LevelInformation;
 
 		private void Start()
 		{
-			LevelInformation = JsonConvert.DeserializeObject<LevelInfo>(File.ReadAllText("Assets/levels/1.json"));
-			//LevelInformation =
-			//new LevelInfo { Map = "VYGBBGVB GYGYYRBB RYGYYGVB GRGRGRVR RYGYVGVB GVGVYGBV RYGYGGRB GYGYYGVV" };
+			//LevelInformation = JsonConvert.DeserializeObject<LevelInfo>(File.ReadAllText("Assets/levels/1.json"));
+			LevelInformation =
+			new LevelInfo { Map = "GBPYYRPR GYGRRGPB RYGYYBRB GRYRGRPR RYGYPGPB GPGPYGRP RYRBGBRB GYGYYGPG" };
 			GenerateMap();
 
 		}
@@ -32,20 +34,25 @@ namespace Assets.scripts
 
 		private void GenerateMap()
 		{
-			SpaceObject[,] map = new SpaceObject[MAP_SIZE, MAP_SIZE];
+			GameField.Map = new SpaceObject[MAP_SIZE, MAP_SIZE];
 			for (var i = 0; i < MAP_SIZE; i++)
 			{
 				for (var j = 0; j < MAP_SIZE; j++)
 				{
-					SpaceObject spaceObject = ((GameObject) Instantiate(
-						SpaceObjectPrefab, new Vector3(i - Mathf.Floor(MAP_SIZE/2), -j + Mathf.Floor(MAP_SIZE/2), 0),
-						Quaternion.Euler(new Vector3())))
-						.GetComponent<SpaceObject>();
-					spaceObject.Initialise(i, j, LevelInformation.Map.ElementAt(j*(MAP_SIZE+1) + i)); //?
-					map[i, j] = spaceObject;
+					SpaceObjectCreate(i, j, LevelInformation.Map.ElementAt(j*(MAP_SIZE + 1) + i));
 				}
 			}
-			GameField.Map = map;
+		}
+
+		public static void SpaceObjectCreate(int x, int y, char type)
+		{
+			SpaceObject spaceObject = ((GameObject)Instantiate(
+						SpaceObjectPrefab, GameField.GetVectorFromCoord(x,y),
+						Quaternion.Euler(new Vector3())))
+						.GetComponent<SpaceObject>();
+			spaceObject.Initialise(x, y, type); //?
+			GameField.Map[x, y] = spaceObject;
+			//Thread.Sleep(5);
 		}
 	}
 }

@@ -9,6 +9,7 @@ namespace Assets.scripts
 	{
 		Default,
 		Clicked,
-		Moving
+		Moving,
+		Dropping,
 	}
 }
