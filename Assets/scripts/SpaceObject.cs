@@ -19,6 +19,8 @@ public class SpaceObject : MonoBehaviour
 	public static Sprite YellowAsteroidSprite = Resources.Load("1met_yellow", typeof(Sprite)) as Sprite;
 	public static float DropSpeed = 5f;
 	public static float MoveSpeed = 2f;
+	public float StartTime = 0;
+	public float Delay = 0;
 	public SpaceObjectState State { get; private set; }
 	public bool UpdatedField = false;
 	public bool IsAsteroid()
@@ -30,18 +32,32 @@ public class SpaceObject : MonoBehaviour
 	{
 		Destroy(gameObject);
 	}
-	public void Initialise(int x, int y, char type)
+	public void Initialise(int x, int y, char type, float delay = 0)
 	{
 		GridPosition = new Coordinate(x,y);
 		TypeOfObject = CharsToObjectTypes[type];
 		gameObject.GetComponent<SpriteRenderer>().sprite = SpaceObjectTypesToSprites[TypeOfObject];
-		State = SpaceObjectState.Default;
+		
 		Destination = GameField.GetVectorFromCoord(GridPosition.X, GridPosition.Y);
+		if (delay > 0)
+		{
+			Delay = delay;
+			StartTime = Time.time;
+			State = SpaceObjectState.WaitingForInitialising;
+			return;
+		}
+		State = SpaceObjectState.Default;
 	}
 
 	void Update()
 	{
-		
+		if (State == SpaceObjectState.WaitingForInitialising)
+		{
+			if (Time.time - StartTime > Delay)
+				State = SpaceObjectState.Default;
+			else
+				return;
+		}
 		if (Destination != gameObject.transform.position && State != SpaceObjectState.Moving)
 		{
 			State = SpaceObjectState.Dropping;

@@ -11,5 +11,6 @@ namespace Assets.scripts
 		Clicked,
 		Moving,
 		Dropping,
+		WaitingForInitialising
 	}
 }

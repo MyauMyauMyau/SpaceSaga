@@ -34,6 +34,7 @@ namespace Assets.scripts
 
 		private void GenerateMap()
 		{
+			GameField.Awake();
 			GameField.Map = new SpaceObject[MAP_SIZE, MAP_SIZE];
 			for (var i = 0; i < MAP_SIZE; i++)
 			{
@@ -44,13 +45,13 @@ namespace Assets.scripts
 			}
 		}
 
-		public static void SpaceObjectCreate(int x, int y, char type)
+		public static void SpaceObjectCreate(int x, int y, char type, float delay = 0)
 		{
 			SpaceObject spaceObject = ((GameObject)Instantiate(
 						SpaceObjectPrefab, GameField.GetVectorFromCoord(x,y),
 						Quaternion.Euler(new Vector3())))
 						.GetComponent<SpaceObject>();
-			spaceObject.Initialise(x, y, type); //?
+			spaceObject.Initialise(x, y, type, delay); //?
 			GameField.Map[x, y] = spaceObject;
 			//Thread.Sleep(5);
 		}

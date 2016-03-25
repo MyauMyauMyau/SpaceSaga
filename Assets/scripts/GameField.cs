@@ -13,13 +13,16 @@ using Random = System.Random;
 
 namespace Assets.scripts
 {
-	public static class GameField
+	public class GameField
 	{
 		public static SpaceObject[,] Map;
 		public static Coordinate? ClickedObject;
 		public static float MoveSpeed = 10.0f;
-
-
+		public static SpaceObject instance = null;
+		public static void Awake()
+		{
+			instance = new SpaceObject();
+		}
 
 		public static void Swap(Coordinate p1, Coordinate p2)
 		{
@@ -47,14 +50,10 @@ namespace Assets.scripts
 				}
 			}
 			DropAsteroids();
-			//for (int i = 0; i< 8; i++)
-			//	for (int j = 0; j < 8; j++)
-			//	{
-			//		if (Map[i,j] == null)
-			//			Debug.Log(i+" "+j);
-			//	}
-			//yield return null;
 		}
+
+
+
 		private static void CheckRow(SpaceObject cell, int i, int j)
 		{
 
@@ -160,11 +159,13 @@ namespace Assets.scripts
 
 		private static void DropAsteroids()
 		{
-			var wasDropped = false;
+			var delay = 0f;
+			var step = 1f/SpaceObject.DropSpeed;
 			Random r = new Random();
-			for (int j = Map.GetLength(1) - 1; j >= 0; j--)
+			for (int i = 0; i < Map.GetLength(0); i++)
 			{
-				for (int i = 0; i < Map.GetLength(0); i++)
+				delay = step;
+				for (int j = Map.GetLength(1) - 1; j >= 0; j--)
 				{
 					if (Map[i, j] != null)
 						continue;
@@ -175,8 +176,8 @@ namespace Assets.scripts
 					}
 					if (depth == 0 && Map[i, depth] == null)
 					{
-						wasDropped = true;
-						Game.SpaceObjectCreate(i, 0, AsteroidsList.ElementAt(r.Next(5)));
+						Game.SpaceObjectCreate(i, 0, AsteroidsList.ElementAt(r.Next(5)), delay);
+						delay += step;
 					}
 					if (depth >= 0  && depth != j && Map[i, depth] != null)
 					{
@@ -214,11 +215,6 @@ namespace Assets.scripts
 							return true;
 			return false;
 		}
-		private static void SwapArrayElements<T>(this T[,] inputArray, Coordinate index1, Coordinate index2)
-		{
-			T temp = inputArray[index1.X, index1.Y];
-			inputArray[index1.X, index1.Y] = inputArray[index2.X, index2.Y];
-			inputArray[index2.X, index2.Y] = temp;
-		}
+		
 	}
 }
