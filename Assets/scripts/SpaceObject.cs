@@ -13,6 +13,7 @@ public class SpaceObject : MonoBehaviour
 {
 	public Coordinate GridPosition { get; set; }
 	public Vector3 Destination { get; set; }
+	public Coordinate PreviousPosition {get; set;}
 	public SpaceObjectType TypeOfObject { get; set;}
 	public static Sprite BlueAsteroidSprite = Resources.Load("1met_blue", typeof(Sprite)) as Sprite;
 	public static Sprite GreenAsteroidSprite = Resources.Load("1met_green", typeof(Sprite)) as Sprite;
@@ -111,9 +112,24 @@ public class SpaceObject : MonoBehaviour
 		{
 			if (transform.position.Equals(Destination))
 			{
+				if (State == SpaceObjectState.Moving && !GameField.MoveIsFinished)
+				{
+					if (!GameField.IsCorrectMove(new List<Coordinate>() {GridPosition, PreviousPosition}))
+						GameField.Swap(GridPosition, PreviousPosition);
+					else
+					{
+						GameField.MoveIsFinished = true;
+						Game.TurnsLeft--;
+					}
+				}
 				State = SpaceObjectState.Default;
 				if (!GameField.IsAnyMoving())
-					GameField.UpdateField();		
+				{
+					if (!GameField.IsAnyCorrectMove())
+						GameField.Shuffle();
+					GameField.UpdateField();
+				}
+				
 			}
 			else
 			{
@@ -165,12 +181,12 @@ public class SpaceObject : MonoBehaviour
 		}
 	}
 
-	public void Move(Vector3 destination)
+	public void Move(Coordinate newPosition)
 	{
-		if (State == SpaceObjectState.Dropping || State == SpaceObjectState.Moving)
-			return;
 		State = SpaceObjectState.Moving;
-		Destination = destination;
+		PreviousPosition = GridPosition;
+		GridPosition = newPosition;
+		Destination = GameField.GetVectorFromCoord(newPosition.X, newPosition.Y);
 	}
 
 

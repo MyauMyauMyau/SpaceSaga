@@ -18,20 +18,98 @@ namespace Assets.scripts
 		public static SpaceObject[,] Map;
 		public static Coordinate? ClickedObject;
 		public static float MoveSpeed = 10.0f;
-		public static SpaceObject instance = null;
-		public static void Awake()
+		public static bool MoveIsFinished = true;
+
+		public static void Shuffle()
 		{
-			instance = new SpaceObject();
+			var rnd = new Random();
+			var list = new List<Coordinate>();
+			for (int i = 0; i < Map.GetLength(0); i++)
+			{
+				for (int j = 0; j < Map.GetLength(1); j++)
+					if (Map[i, j].IsAsteroid())
+						list.Add(new Coordinate(i, j));
+			}
+			while (list.Count != 0)
+			{
+				MoveIsFinished = false;
+				var target = rnd.Next(list.Count);
+				Swap(list.ElementAt(0), list.ElementAt(target));
+				list.RemoveAt(0);
+				if (target != 0)
+					list.RemoveAt(target -1);
+			}
+		}
+		public static bool IsAnyCorrectMove()
+		{
+			var list = new List<Coordinate>();
+			for (int i = 0; i < Map.GetLength(0)-1; i++)
+			{
+				for (int j = 0; j < Map.GetLength(1); j++)
+				{
+					if (Map[i, j].IsAsteroid() && Map[i + 1, j].IsAsteroid())
+					{
+						var p1 = new Coordinate(i, j);
+						var p2 = new Coordinate(i + 1, j);
+						Map.SwapArrayElements(p1, p2);
+						if (IsCorrectMove(new List<Coordinate>() {p1, p2}))
+						{
+							Map.SwapArrayElements(p1, p2);
+							return true;
+						}
+						Map.SwapArrayElements(p1, p2);
+					}
+				}
+			}
+			for (int i = 0; i < Map.GetLength(0); i++)
+			{
+				for (int j = 0; j < Map.GetLength(1) - 1; j++)
+				{
+					var p1 = new Coordinate(i, j);
+					var p2 = new Coordinate(i, j + 1);
+					Map.SwapArrayElements(p1, p2);
+					if (IsCorrectMove(new List<Coordinate>() { p1, p2 }))
+					{
+						Map.SwapArrayElements(p1, p2);
+						return true;
+					}
+					Map.SwapArrayElements(p1, p2);
+				}
+			}
+			return false;
+		}
+		public static bool IsCorrectMove(List<Coordinate> coordinates)
+		{
+			//correct if any triples
+			foreach (var coordinate in coordinates)
+			{
+				var bottomBoundX = Math.Max(0, coordinate.X - 2);
+				var bottomBoundY = Math.Max(0, coordinate.Y - 2);
+				var topBoundX = Math.Min(Map.GetLength(0) - 1, coordinate.X + 2);
+				var topBoundY = Math.Min(Map.GetLength(1) - 1, coordinate.Y + 2);
+				for (int i = bottomBoundX; i <= topBoundX - 2; i++)
+				{
+					if (Map[i, coordinate.Y].TypeOfObject == Map[i + 1, coordinate.Y].TypeOfObject
+					    && Map[i, coordinate.Y].TypeOfObject == Map[i + 2, coordinate.Y].TypeOfObject)
+						return true;
+				}
+				for (int i = bottomBoundY; i <= topBoundY - 2; i++)
+				{
+					if (Map[coordinate.X, i].TypeOfObject == Map[coordinate.X, i+1].TypeOfObject
+						&& Map[coordinate.X, i].TypeOfObject == Map[coordinate.X, i+2].TypeOfObject)
+						return true;
+				}
+			}
+			return false;
 		}
 
 		public static void Swap(Coordinate p1, Coordinate p2)
 		{
-			Map[p1.X, p1.Y].Move(Map[p2.X, p2.Y].transform.position);
-			Map[p2.X, p2.Y].Move(Map[p1.X, p1.Y].transform.position);
+			Map[p1.X, p1.Y].Move(new Coordinate(p2.X, p2.Y));
+			Map[p2.X, p2.Y].Move(new Coordinate(p1.X, p1.Y));
 			Map.SwapArrayElements(p1,p2);
 			ClickedObject = null;
-			Map[p1.X, p1.Y].GridPosition = p1;
-			Map[p2.X, p2.Y].GridPosition = p2;
+			MoveIsFinished = !MoveIsFinished;
 		}
 
 		public static void UpdateField()
@@ -55,6 +133,7 @@ namespace Assets.scripts
 
 		private static void CheckRow(SpaceObject cell, int i, int j)
 		{
+			var unstableList = new List<Coordinate>();
 			var asteroidsColumnList = new List<Coordinate>();
 			asteroidsColumnList.Add(cell.GridPosition);
 			var unstableIsAdded = false;
@@ -77,8 +156,7 @@ namespace Assets.scripts
 				var coord = asteroidsColumnList.ElementAt(asteroidsColumnList.Count/2);
 				Map[coord.X, coord.Y].DestroyAsteroid();
 				listToDestroy.Remove(coord);
-				Game.SpaceObjectCreate(coord.X, coord.Y, SpaceObject.CharsToObjectTypes
-						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+				unstableList.Add(coord);
 				unstableIsAdded = true;
 			}	
 			var bufRowList = new List<Coordinate>();
@@ -104,8 +182,7 @@ namespace Assets.scripts
 					var coord = bufRowList.ElementAt(asteroidsColumnList.Count / 2);
 					Map[coord.X, coord.Y].DestroyAsteroid();
 					listToDestroy.Remove(coord);
-					Game.SpaceObjectCreate(coord.X, coord.Y, SpaceObject.CharsToObjectTypes
-						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+					unstableList.Add(coord);
 					unstableIsAdded = true;
 				}
 				if (bufRowList.Count >= 2)
@@ -119,8 +196,7 @@ namespace Assets.scripts
 					{
 						Map[asteroid.X, asteroid.Y].DestroyAsteroid();
 						listToDestroy.Remove(asteroid);
-						Game.SpaceObjectCreate(asteroid.X, asteroid.Y, SpaceObject.CharsToObjectTypes
-						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+						unstableList.Add(asteroid);
 						unstableIsAdded = true;
 					} 
 				}
@@ -133,9 +209,15 @@ namespace Assets.scripts
 				Map[coordinate.X, coordinate.Y].DestroyAsteroid();
 				Map[coordinate.X, coordinate.Y] = null;
 			}
+			foreach (var coord in unstableList)
+			{
+				Game.SpaceObjectCreate(coord.X, coord.Y, SpaceObject.CharsToObjectTypes
+						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+			}
 		}
 		private static void CheckColumn(SpaceObject cell, int i, int j)
 		{
+			var unstableList = new List<Coordinate>();
 			var asteroidsColumnList = new List<Coordinate>();
 			asteroidsColumnList.Add(cell.GridPosition);
 			var unstableIsAdded = false;
@@ -156,8 +238,7 @@ namespace Assets.scripts
 				var coord = asteroidsColumnList.ElementAt(asteroidsColumnList.Count / 2);
 				Map[coord.X, coord.Y].DestroyAsteroid();
 				listToDestroy.Remove(coord);
-				Game.SpaceObjectCreate(coord.X, coord.Y, SpaceObject.CharsToObjectTypes
-						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+				unstableList.Add(coord);
 				unstableIsAdded = true;
 			}
 
@@ -184,13 +265,11 @@ namespace Assets.scripts
 					var coord = bufRowList.ElementAt(asteroidsColumnList.Count / 2);
 					Map[coord.X, coord.Y].DestroyAsteroid();
 					listToDestroy.Remove(coord);
-					Game.SpaceObjectCreate(coord.X, coord.Y, SpaceObject.CharsToObjectTypes
-						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+					unstableList.Add(coord);
 					unstableIsAdded = true;
 				}
 				if (bufRowList.Count >= 2)
 				{
-					Debug.Log("yahoo");
 					foreach (var coordinate in bufRowList)
 					{
 						listToDestroy.Add(coordinate);
@@ -199,20 +278,23 @@ namespace Assets.scripts
 					{
 						Map[asteroid.X, asteroid.Y].DestroyAsteroid();
 						listToDestroy.Remove(asteroid);
-						Game.SpaceObjectCreate(asteroid.X, asteroid.Y, SpaceObject.CharsToObjectTypes
-						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+						unstableList.Add(asteroid);
 						unstableIsAdded = true;
 					}
 				}
 				bufRowList.Clear();
 			}
-
 			HandleUnstableAsteroids(listToDestroy);
 			foreach (var coordinate in listToDestroy
 				.Where(x=>Map[x.X, x.Y] != null && Map[x.X, x.Y].IsAsteroid()))
 			{
 				Map[coordinate.X, coordinate.Y].DestroyAsteroid();
 				Map[coordinate.X, coordinate.Y] = null;
+			}
+			foreach (var coord in unstableList)
+			{
+				Game.SpaceObjectCreate(coord.X, coord.Y, SpaceObject.CharsToObjectTypes
+						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
 			}
 		}
 
@@ -278,8 +360,8 @@ namespace Assets.scripts
 
 		public static Vector3 GetVectorFromCoord(int i, int j)
 		{
-			return new Vector3(i - 4,
-							4 - j, 0);
+			return new Vector3(i - Game.MAP_SIZE/2,
+							Game.MAP_SIZE/2 - j, 0);
 		}
 
 		public static List<char> AsteroidsList = new List<char>()

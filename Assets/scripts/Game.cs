@@ -14,14 +14,16 @@ namespace Assets.scripts
 
 		// Use this for initialization
 		public static GameObject SpaceObjectPrefab = Resources.Load("SpaceObjectPrefab", typeof(GameObject)) as GameObject;
-		public const int MAP_SIZE = 8;
+		public const int MAP_SIZE = 4;
 		private LevelInfo LevelInformation;
-
+		public static int TurnsLeft;
 		private void Start()
 		{
+			TurnsLeft = 10;
 			//LevelInformation = JsonConvert.DeserializeObject<LevelInfo>(File.ReadAllText("Assets/levels/1.json"));
 			LevelInformation =
-			new LevelInfo { Map = "GBPYYRPR GYGRRGPB RYGYYBRB GRYRGRPR RYGYPGPB GPGPYGRP RYRBGBRB GYGYYGPG" };
+			//new LevelInfo { Map = "GBPYYRPR GYGRRGPB RYGYYBRB GRYRGRPR RYGYPGPB GPGPYGRP RYRBGBRB GYGYYGPG" };
+			new LevelInfo { Map = "GBPY GYGR RYGY GRYR RYGY GPGP RYRB GYGY" };
 			GenerateMap();
 
 		}
@@ -29,12 +31,12 @@ namespace Assets.scripts
 		// Update is called once per frame
 		private void Update()
 		{
-
+			if (TurnsLeft == 0)
+				Debug.Log("Game Is Finished");
 		}
 
 		private void GenerateMap()
 		{
-			GameField.Awake();
 			GameField.Map = new SpaceObject[MAP_SIZE, MAP_SIZE];
 			for (var i = 0; i < MAP_SIZE; i++)
 			{
