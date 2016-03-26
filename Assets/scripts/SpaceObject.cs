@@ -6,23 +6,35 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Assets.scripts;
 using System.Linq;
+using Assets.scripts.Enums;
+using Random = System.Random;
 
 public class SpaceObject : MonoBehaviour
 {
 	public Coordinate GridPosition { get; set; }
 	public Vector3 Destination { get; set; }
-	public SpaceObjectType TypeOfObject { get; private set;}
+	public SpaceObjectType TypeOfObject { get; set;}
 	public static Sprite BlueAsteroidSprite = Resources.Load("1met_blue", typeof(Sprite)) as Sprite;
 	public static Sprite GreenAsteroidSprite = Resources.Load("1met_green", typeof(Sprite)) as Sprite;
 	public static Sprite RedAsteroidSprite = Resources.Load("1met_red", typeof(Sprite)) as Sprite;
 	public static Sprite PurpleAsteroidSprite = Resources.Load("1met_purple", typeof(Sprite)) as Sprite;
 	public static Sprite YellowAsteroidSprite = Resources.Load("1met_yellow", typeof(Sprite)) as Sprite;
-	public static float DropSpeed = 5f;
-	public static float MoveSpeed = 2f;
+	public static Sprite UnstableBlueAsteroidSprite = Resources.Load("2Nmet_blue", typeof(Sprite)) as Sprite;
+	public static Sprite UnstableGreenAsteroidSprite = Resources.Load("2Nmet_green", typeof(Sprite)) as Sprite;
+	public static Sprite UnstableRedAsteroidSprite = Resources.Load("2Nmet_red", typeof(Sprite)) as Sprite;
+	public static Sprite UnstablePurpleAsteroidSprite = Resources.Load("2Nmet_purple", typeof(Sprite)) as Sprite;
+	public static Sprite UnstableYellowAsteroidSprite = Resources.Load("2Nmet_yellow", typeof(Sprite)) as Sprite;
+	public const float BaseDropSpeed = 10f;
+	public float DropSpeed;
+	public float MoveSpeed;
+	public float GrowSpeed = 0.1f;
 	public float StartTime = 0;
 	public float Delay = 0;
-	public SpaceObjectState State { get; private set; }
+
+	public bool IsUnstable { get; set; }
+	public SpaceObjectState State { get; set; }
 	public bool UpdatedField = false;
+	public Random rnd = new Random();
 	public bool IsAsteroid()
 	{
 		return AsteroidTypes.Contains(TypeOfObject);
@@ -32,12 +44,20 @@ public class SpaceObject : MonoBehaviour
 	{
 		Destroy(gameObject);
 	}
-	public void Initialise(int x, int y, char type, float delay = 0)
+	public void Initialise(int x, int y, char type, float delay = 0, bool isUnstable = false)
 	{
+		DropSpeed = BaseDropSpeed;
+		MoveSpeed = 5f;
+		IsUnstable = isUnstable;
 		GridPosition = new Coordinate(x,y);
 		TypeOfObject = CharsToObjectTypes[type];
-		gameObject.GetComponent<SpriteRenderer>().sprite = SpaceObjectTypesToSprites[TypeOfObject];
-		
+		if (isUnstable)
+		{
+			gameObject.GetComponent<SpriteRenderer>().sprite = StableToUnstableSprites[TypeOfObject];
+		}
+		else
+			gameObject.GetComponent<SpriteRenderer>().sprite = SpaceObjectTypesToSprites[TypeOfObject];
+
 		Destination = GameField.GetVectorFromCoord(GridPosition.X, GridPosition.Y);
 		if (delay > 0)
 		{
@@ -54,7 +74,7 @@ public class SpaceObject : MonoBehaviour
 		if (State == SpaceObjectState.WaitingForInitialising)
 		{
 			if (Time.time - StartTime > Delay)
-				State = SpaceObjectState.Default;
+				State = SpaceObjectState.Dropping;
 			else
 				return;
 		}
@@ -66,8 +86,25 @@ public class SpaceObject : MonoBehaviour
 		if (gameObject.transform.localScale.x < 1)
 		{
 			Vector3 scale = transform.localScale;
-			scale.x += 0.025f;
-			scale.y += 0.025f;
+			if (IsUnstable)
+			{
+				scale.x = 1;
+				scale.y = 1;
+			}
+			else
+			{
+				scale.x += GrowSpeed;
+				scale.y += GrowSpeed;
+			}
+			gameObject.transform.localScale = scale;
+			if (gameObject.transform.localScale.x < 0.90)
+				return;
+		}
+		if (IsUnstable && rnd.Next(2) == 1)
+		{
+			Vector3 scale = transform.localScale;
+			scale.x -= 0.05f;
+			scale.y -= 0.05f;
 			gameObject.transform.localScale = scale;
 		}
 		if (State == SpaceObjectState.Moving || State == SpaceObjectState.Dropping)
@@ -81,7 +118,7 @@ public class SpaceObject : MonoBehaviour
 			else
 			{
 				float step;
-				step = State == SpaceObjectState.Dropping ? DropSpeed*Time.deltaTime : MoveSpeed*Time.deltaTime;
+				step = State == SpaceObjectState.Dropping ? this.DropSpeed*Time.deltaTime : this.MoveSpeed*Time.deltaTime;
 				transform.position = Vector3.MoveTowards(transform.position, Destination, step);
 			}
 		}
@@ -91,6 +128,7 @@ public class SpaceObject : MonoBehaviour
 		}
 		else
 			gameObject.GetComponentInChildren<Light>().enabled = false;
+
 	}
 	void OnMouseDown()
 	{										 
@@ -136,7 +174,7 @@ public class SpaceObject : MonoBehaviour
 	}
 
 
-	private static readonly Dictionary<char, SpaceObjectType> CharsToObjectTypes = new Dictionary<char, SpaceObjectType>
+	public static readonly Dictionary<char, SpaceObjectType> CharsToObjectTypes = new Dictionary<char, SpaceObjectType>
 	{
 		{ 'G', SpaceObjectType.GreenAsteroid},
 		{ 'R', SpaceObjectType.RedAsteroid},
@@ -152,6 +190,15 @@ public class SpaceObject : MonoBehaviour
 		{SpaceObjectType.BlueAsteroid, BlueAsteroidSprite},
 		{SpaceObjectType.PurpleAsteroid, PurpleAsteroidSprite},
 		{SpaceObjectType.YellowAsteroid, YellowAsteroidSprite},
+	};
+
+	private static readonly Dictionary<SpaceObjectType, Sprite> StableToUnstableSprites = new Dictionary<SpaceObjectType, Sprite>
+	{
+		{SpaceObjectType.GreenAsteroid, UnstableGreenAsteroidSprite},
+		{SpaceObjectType.RedAsteroid, UnstableRedAsteroidSprite},
+		{SpaceObjectType.BlueAsteroid, UnstableBlueAsteroidSprite},
+		{SpaceObjectType.PurpleAsteroid, UnstablePurpleAsteroidSprite},
+		{SpaceObjectType.YellowAsteroid, UnstableYellowAsteroidSprite},
 	};
 
 	private static readonly List<SpaceObjectType> AsteroidTypes = new List<SpaceObjectType>()

@@ -45,15 +45,16 @@ namespace Assets.scripts
 			}
 		}
 
-		public static void SpaceObjectCreate(int x, int y, char type, float delay = 0)
+		public static void SpaceObjectCreate(int x, int y, char type, float delay = 0, bool isUnstable = false)
 		{
 			SpaceObject spaceObject = ((GameObject)Instantiate(
 						SpaceObjectPrefab, GameField.GetVectorFromCoord(x,y),
 						Quaternion.Euler(new Vector3())))
 						.GetComponent<SpaceObject>();
-			spaceObject.Initialise(x, y, type, delay); //?
+			spaceObject.Initialise(x, y, type, delay, isUnstable); //?
 			GameField.Map[x, y] = spaceObject;
 			//Thread.Sleep(5);
 		}
+
 	}
 }

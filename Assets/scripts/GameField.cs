@@ -36,7 +36,6 @@ namespace Assets.scripts
 
 		public static void UpdateField()
 		{
-
 			for (int i = 0; i < Map.GetLength(0); i++)
 			{
 				for (int j = 0; j < Map.GetLength(1); j++)
@@ -56,15 +55,16 @@ namespace Assets.scripts
 
 		private static void CheckRow(SpaceObject cell, int i, int j)
 		{
-
 			var asteroidsColumnList = new List<Coordinate>();
 			asteroidsColumnList.Add(cell.GridPosition);
+			var unstableIsAdded = false;
 			while (i < Map.GetLength(0) - 1 && Map[i + 1, j] != null 
 				&& Map[i + 1, j].TypeOfObject == cell.TypeOfObject)
 			{
 				i++;
 				asteroidsColumnList.Add(Map[i, j].GridPosition);
 			}
+
 			if (asteroidsColumnList.Count < 3)
 				return;
 			var listToDestroy = new List<Coordinate>();
@@ -72,6 +72,15 @@ namespace Assets.scripts
 			{
 				listToDestroy.Add(coordinate);
 			}
+			if (asteroidsColumnList.Count >= 5)
+			{
+				var coord = asteroidsColumnList.ElementAt(asteroidsColumnList.Count/2);
+				Map[coord.X, coord.Y].DestroyAsteroid();
+				listToDestroy.Remove(coord);
+				Game.SpaceObjectCreate(coord.X, coord.Y, SpaceObject.CharsToObjectTypes
+						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+				unstableIsAdded = true;
+			}	
 			var bufRowList = new List<Coordinate>();
 			foreach (var asteroid in asteroidsColumnList)
 			{
@@ -90,17 +99,36 @@ namespace Assets.scripts
 					j--;
 					bufRowList.Add(Map[i, j].GridPosition);
 				}
+				if (bufRowList.Count >= 5)
+				{
+					var coord = bufRowList.ElementAt(asteroidsColumnList.Count / 2);
+					Map[coord.X, coord.Y].DestroyAsteroid();
+					listToDestroy.Remove(coord);
+					Game.SpaceObjectCreate(coord.X, coord.Y, SpaceObject.CharsToObjectTypes
+						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+					unstableIsAdded = true;
+				}
 				if (bufRowList.Count >= 2)
 				{
-					Debug.Log("yahoo");
+					//Debug.Log("yahoo");
 					foreach (var coordinate in bufRowList)
 					{
 						listToDestroy.Add(coordinate);
 					}
+					if (!unstableIsAdded)
+					{
+						Map[asteroid.X, asteroid.Y].DestroyAsteroid();
+						listToDestroy.Remove(asteroid);
+						Game.SpaceObjectCreate(asteroid.X, asteroid.Y, SpaceObject.CharsToObjectTypes
+						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+						unstableIsAdded = true;
+					} 
 				}
 				bufRowList.Clear();
 			}
-			foreach (var coordinate in listToDestroy)
+			HandleUnstableAsteroids(listToDestroy);
+			foreach (var coordinate in listToDestroy
+				.Where(x => Map[x.X, x.Y] != null && Map[x.X, x.Y].IsAsteroid()))
 			{
 				Map[coordinate.X, coordinate.Y].DestroyAsteroid();
 				Map[coordinate.X, coordinate.Y] = null;
@@ -110,6 +138,7 @@ namespace Assets.scripts
 		{
 			var asteroidsColumnList = new List<Coordinate>();
 			asteroidsColumnList.Add(cell.GridPosition);
+			var unstableIsAdded = false;
 			while (j < Map.GetLength(1) - 1 && Map[i, j + 1] != null && Map[i, j + 1].TypeOfObject == cell.TypeOfObject)
 			{
 				j++;
@@ -122,6 +151,16 @@ namespace Assets.scripts
 			{
 				listToDestroy.Add(coordinate);
 			}
+			if (asteroidsColumnList.Count >= 5)
+			{
+				var coord = asteroidsColumnList.ElementAt(asteroidsColumnList.Count / 2);
+				Map[coord.X, coord.Y].DestroyAsteroid();
+				listToDestroy.Remove(coord);
+				Game.SpaceObjectCreate(coord.X, coord.Y, SpaceObject.CharsToObjectTypes
+						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+				unstableIsAdded = true;
+			}
+
 			var bufRowList = new List<Coordinate>();
 			foreach (var asteroid in asteroidsColumnList)
 			{
@@ -140,6 +179,15 @@ namespace Assets.scripts
 					i--;
 					bufRowList.Add(Map[i, j].GridPosition);
 				}
+				if (bufRowList.Count >= 5)
+				{
+					var coord = bufRowList.ElementAt(asteroidsColumnList.Count / 2);
+					Map[coord.X, coord.Y].DestroyAsteroid();
+					listToDestroy.Remove(coord);
+					Game.SpaceObjectCreate(coord.X, coord.Y, SpaceObject.CharsToObjectTypes
+						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+					unstableIsAdded = true;
+				}
 				if (bufRowList.Count >= 2)
 				{
 					Debug.Log("yahoo");
@@ -147,24 +195,62 @@ namespace Assets.scripts
 					{
 						listToDestroy.Add(coordinate);
 					}
+					if (!unstableIsAdded)
+					{
+						Map[asteroid.X, asteroid.Y].DestroyAsteroid();
+						listToDestroy.Remove(asteroid);
+						Game.SpaceObjectCreate(asteroid.X, asteroid.Y, SpaceObject.CharsToObjectTypes
+						.First(x => x.Value == cell.TypeOfObject).Key, 0, true);
+						unstableIsAdded = true;
+					}
 				}
 				bufRowList.Clear();
 			}
-			foreach (var coordinate in listToDestroy)
+
+			HandleUnstableAsteroids(listToDestroy);
+			foreach (var coordinate in listToDestroy
+				.Where(x=>Map[x.X, x.Y] != null && Map[x.X, x.Y].IsAsteroid()))
 			{
 				Map[coordinate.X, coordinate.Y].DestroyAsteroid();
 				Map[coordinate.X, coordinate.Y] = null;
 			}
 		}
 
+		private static void HandleUnstableAsteroids(List<Coordinate> listToDestroy)
+		{
+			for (int i = 0; i < listToDestroy.Count; i++)
+			{
+				if (Map[listToDestroy[i].X, listToDestroy[i].Y].IsUnstable)
+				{
+					var bottomBoundX = Math.Max(0, listToDestroy[i].X - 2);
+					var bottomBoundY = Math.Max(0, listToDestroy[i].Y - 2);
+					var topBoundX = Math.Min(Map.GetLength(0) - 1, listToDestroy[i].X + 2);
+					var topBoundY = Math.Min(Map.GetLength(1) - 1, listToDestroy[i].Y + 2);
+					;
+					for (int x = bottomBoundX; x <= topBoundX; x++)
+					{
+						var coord = new Coordinate(x, listToDestroy[i].Y);
+						if (!listToDestroy.Contains(coord))
+							listToDestroy.Add(coord);
+					}
+					for (int y = bottomBoundY; y <= topBoundY; y++)
+					{
+						var coord = new Coordinate(listToDestroy[i].X, y);
+						if (!listToDestroy.Contains(coord))
+							listToDestroy.Add(coord);
+					}
+				}
+			}
+		}
+
 		private static void DropAsteroids()
 		{
 			var delay = 0f;
-			var step = 1f/SpaceObject.DropSpeed;
+			var step = 3f / SpaceObject.BaseDropSpeed;
 			Random r = new Random();
 			for (int i = 0; i < Map.GetLength(0); i++)
 			{
-				delay = step;
+				delay = step/3;
 				for (int j = Map.GetLength(1) - 1; j >= 0; j--)
 				{
 					if (Map[i, j] != null)
@@ -174,7 +260,7 @@ namespace Assets.scripts
 					{
 						depth--;
 					}
-					if (depth == 0 && Map[i, depth] == null)
+					if (Map[i, 0] == null)
 					{
 						Game.SpaceObjectCreate(i, 0, AsteroidsList.ElementAt(r.Next(5)), delay);
 						delay += step;
