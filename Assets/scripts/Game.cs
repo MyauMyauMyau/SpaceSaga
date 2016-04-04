@@ -23,7 +23,7 @@ namespace Assets.scripts
 			//LevelInformation = JsonConvert.DeserializeObject<LevelInfo>(File.ReadAllText("Assets/levels/1.json"));
 			LevelInformation =
 			//new LevelInfo { Map = "GBPYYRPR GYGRRGPB RYGYYBRB GRYRGRPR RYGYPGPB GPGPYGRP RYRBGBRB GYGYYGPG" };
-			new LevelInfo { Map = "GBPY GYGR RYGY GRYR RYGY GPGP RYRB GYGY" };
+			new LevelInfo { Map = "GBPY EYGR RYYE GRYR RYGY GPGP RYRB GYGY" };
 			GenerateMap();
 
 		}
@@ -33,6 +33,13 @@ namespace Assets.scripts
 		{
 			if (TurnsLeft == 0)
 				Debug.Log("Game Is Finished");
+			GameField.CheckUpperBorder();
+			if (!GameField.IsAnyMoving())
+			{
+				if (!GameField.IsAnyCorrectMove())
+					GameField.Shuffle();
+				GameField.UpdateField();
+			}
 		}
 
 		private void GenerateMap()
@@ -55,7 +62,6 @@ namespace Assets.scripts
 						.GetComponent<SpaceObject>();
 			spaceObject.Initialise(x, y, type, delay, isUnstable); //?
 			GameField.Map[x, y] = spaceObject;
-			//Thread.Sleep(5);
 		}
 
 	}

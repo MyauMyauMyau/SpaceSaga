@@ -12,7 +12,8 @@ namespace Assets.scripts
 		PurpleAsteroid,
 		YellowAsteroid,
 		GreenAsteroid,
-		BlackHole
+		BlackHole,
+		EmptyCell
 			
 	}
 }

@@ -19,25 +19,37 @@ namespace Assets.scripts
 		public static Coordinate? ClickedObject;
 		public static float MoveSpeed = 10.0f;
 		public static bool MoveIsFinished = true;
-
+		public static Random Rnd = new Random();
+		public static void CheckUpperBorder()
+		{
+			var delay = 0f;
+			var step = 3f / SpaceObject.BaseDropSpeed;
+			for (int i = 0; i < Map.GetLength(0); i++)
+			{
+				if (Map[i, 0] == null)
+				{
+					Game.SpaceObjectCreate(i, 0, AsteroidsList.ElementAt(Rnd.Next(5)), delay);
+				}
+			}
+		}
 		public static void Shuffle()
 		{
 			var rnd = new Random();
-			var list = new List<Coordinate>();
+			var asteroidsCoordinates = new List<Coordinate>();
 			for (int i = 0; i < Map.GetLength(0); i++)
 			{
 				for (int j = 0; j < Map.GetLength(1); j++)
-					if (Map[i, j].IsAsteroid())
-						list.Add(new Coordinate(i, j));
+					if (Map[i,j] != null && Map[i, j].IsAsteroid())
+						asteroidsCoordinates.Add(new Coordinate(i, j));
 			}
-			while (list.Count != 0)
+			while (asteroidsCoordinates.Count != 0)
 			{
 				MoveIsFinished = false;
-				var target = rnd.Next(list.Count);
-				Swap(list.ElementAt(0), list.ElementAt(target));
-				list.RemoveAt(0);
+				var target = rnd.Next(asteroidsCoordinates.Count);
+				Swap(asteroidsCoordinates.ElementAt(0), asteroidsCoordinates.ElementAt(target));
+				asteroidsCoordinates.RemoveAt(0);
 				if (target != 0)
-					list.RemoveAt(target -1);
+					asteroidsCoordinates.RemoveAt(target -1);
 			}
 		}
 		public static bool IsAnyCorrectMove()
@@ -47,24 +59,25 @@ namespace Assets.scripts
 			{
 				for (int j = 0; j < Map.GetLength(1); j++)
 				{
-					if (Map[i, j].IsAsteroid() && Map[i + 1, j].IsAsteroid())
+					if (!Map[i,j].IsAsteroid() || !Map[i+1,j].IsAsteroid())
+						continue;
+					var p1 = new Coordinate(i, j);
+					var p2 = new Coordinate(i + 1, j);
+					Map.SwapArrayElements(p1, p2);
+					if (IsCorrectMove(new List<Coordinate>() {p1, p2}))
 					{
-						var p1 = new Coordinate(i, j);
-						var p2 = new Coordinate(i + 1, j);
 						Map.SwapArrayElements(p1, p2);
-						if (IsCorrectMove(new List<Coordinate>() {p1, p2}))
-						{
-							Map.SwapArrayElements(p1, p2);
-							return true;
-						}
-						Map.SwapArrayElements(p1, p2);
+						return true;
 					}
+					Map.SwapArrayElements(p1, p2);
 				}
 			}
 			for (int i = 0; i < Map.GetLength(0); i++)
 			{
 				for (int j = 0; j < Map.GetLength(1) - 1; j++)
 				{
+					if (!Map[i, j].IsAsteroid() || !Map[i, j + 1].IsAsteroid())
+						continue;
 					var p1 = new Coordinate(i, j);
 					var p2 = new Coordinate(i, j + 1);
 					Map.SwapArrayElements(p1, p2);
@@ -89,12 +102,14 @@ namespace Assets.scripts
 				var topBoundY = Math.Min(Map.GetLength(1) - 1, coordinate.Y + 2);
 				for (int i = bottomBoundX; i <= topBoundX - 2; i++)
 				{
+					if (Map[i, coordinate.Y] == null || Map[i+1, coordinate.Y] == null || Map[i+2, coordinate.Y] == null) continue;
 					if (Map[i, coordinate.Y].TypeOfObject == Map[i + 1, coordinate.Y].TypeOfObject
 					    && Map[i, coordinate.Y].TypeOfObject == Map[i + 2, coordinate.Y].TypeOfObject)
 						return true;
 				}
 				for (int i = bottomBoundY; i <= topBoundY - 2; i++)
 				{
+					if (Map[coordinate.X, i] == null || Map[coordinate.X, i + 1] == null || Map[coordinate.X ,i + 2] == null) continue;
 					if (Map[coordinate.X, i].TypeOfObject == Map[coordinate.X, i+1].TypeOfObject
 						&& Map[coordinate.X, i].TypeOfObject == Map[coordinate.X, i+2].TypeOfObject)
 						return true;
@@ -112,6 +127,12 @@ namespace Assets.scripts
 			MoveIsFinished = !MoveIsFinished;
 		}
 
+		public static void Drop(Coordinate p1, Coordinate p2)
+		{
+			Map[p1.X, p1.Y].Move(p2);
+			Map[p2.X, p2.Y] = Map[p1.X, p1.Y];
+			Map[p1.X, p1.Y] = null;
+		}
 		public static void UpdateField()
 		{
 			for (int i = 0; i < Map.GetLength(0); i++)
@@ -126,7 +147,6 @@ namespace Assets.scripts
 					CheckRow(Map[i, j], i, j); //checking row here
 				}
 			}
-			DropAsteroids();
 		}
 
 
@@ -379,7 +399,7 @@ namespace Assets.scripts
 				for (int j = 0; j < Game.MAP_SIZE; j++)
 					if (Map[i,j] != null && 
 						(Map[i, j].State == SpaceObjectState.Dropping 
-						|| Map[i, j].State == SpaceObjectState.Moving))
+						|| Map[i, j].State == SpaceObjectState.Moving || Map[i, j].State == SpaceObjectState.Growing))
 							return true;
 			return false;
 		}

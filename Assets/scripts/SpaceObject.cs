@@ -20,6 +20,7 @@ public class SpaceObject : MonoBehaviour
 	public static Sprite RedAsteroidSprite = Resources.Load("1met_red", typeof(Sprite)) as Sprite;
 	public static Sprite PurpleAsteroidSprite = Resources.Load("1met_purple", typeof(Sprite)) as Sprite;
 	public static Sprite YellowAsteroidSprite = Resources.Load("1met_yellow", typeof(Sprite)) as Sprite;
+	public static Sprite EmptyCellSprite = Resources.Load("EmptyCell", typeof(Sprite)) as Sprite;
 	public static Sprite UnstableBlueAsteroidSprite = Resources.Load("2Nmet_blue", typeof(Sprite)) as Sprite;
 	public static Sprite UnstableGreenAsteroidSprite = Resources.Load("2Nmet_green", typeof(Sprite)) as Sprite;
 	public static Sprite UnstableRedAsteroidSprite = Resources.Load("2Nmet_red", typeof(Sprite)) as Sprite;
@@ -28,7 +29,7 @@ public class SpaceObject : MonoBehaviour
 	public const float BaseDropSpeed = 10f;
 	public float DropSpeed;
 	public float MoveSpeed;
-	public float GrowSpeed = 0.1f;
+	public float GrowSpeed;
 	public float StartTime = 0;
 	public float Delay = 0;
 
@@ -49,6 +50,7 @@ public class SpaceObject : MonoBehaviour
 	{
 		DropSpeed = BaseDropSpeed;
 		MoveSpeed = 5f;
+		GrowSpeed = 0.05f;
 		IsUnstable = isUnstable;
 		GridPosition = new Coordinate(x,y);
 		TypeOfObject = CharsToObjectTypes[type];
@@ -67,7 +69,7 @@ public class SpaceObject : MonoBehaviour
 			State = SpaceObjectState.WaitingForInitialising;
 			return;
 		}
-		State = SpaceObjectState.Default;
+		State = SpaceObjectState.Growing;
 	}
 
 	void Update()
@@ -79,6 +81,8 @@ public class SpaceObject : MonoBehaviour
 			else
 				return;
 		}
+
+
 		if (Destination != gameObject.transform.position && State != SpaceObjectState.Moving)
 		{
 			State = SpaceObjectState.Dropping;
@@ -101,6 +105,8 @@ public class SpaceObject : MonoBehaviour
 			if (gameObject.transform.localScale.x < 0.90)
 				return;
 		}
+		else if (State == SpaceObjectState.Growing)
+			State = SpaceObjectState.Default;
 		if (IsUnstable && rnd.Next(2) == 1)
 		{
 			Vector3 scale = transform.localScale;
@@ -123,13 +129,6 @@ public class SpaceObject : MonoBehaviour
 					}
 				}
 				State = SpaceObjectState.Default;
-				if (!GameField.IsAnyMoving())
-				{
-					if (!GameField.IsAnyCorrectMove())
-						GameField.Shuffle();
-					GameField.UpdateField();
-				}
-				
 			}
 			else
 			{
@@ -145,11 +144,28 @@ public class SpaceObject : MonoBehaviour
 		else
 			gameObject.GetComponentInChildren<Light>().enabled = false;
 
+		if (IsAsteroid() && GridPosition.Y != Game.MAP_SIZE - 1)
+		{
+			if (GameField.Map[GridPosition.X, GridPosition.Y + 1] == null)
+			{
+				GameField.Drop(GridPosition, new Coordinate(GridPosition.X, GridPosition.Y + 1));
+			}
+			// if downdrop is blocked
+			else if (GridPosition.X > 0 && GameField.Map[GridPosition.X - 1, GridPosition.Y] != null 
+				&& !GameField.Map[GridPosition.X - 1, GridPosition.Y].IsAsteroid() &&
+				GameField.Map[GridPosition.X - 1, GridPosition.Y + 1] == null)
+				GameField.Drop(GridPosition, new Coordinate(GridPosition.X - 1, GridPosition.Y + 1));
+			else if (GridPosition.X < GameField.Map.GetLength(0) - 1 &&
+				GameField.Map[GridPosition.X +1, GridPosition.Y] != null
+				&& !GameField.Map[GridPosition.X + 1, GridPosition.Y].IsAsteroid() &&
+				GameField.Map[GridPosition.X + 1, GridPosition.Y + 1] == null)
+				GameField.Drop(GridPosition, new Coordinate(GridPosition.X + 1, GridPosition.Y + 1));
+		}
+
 	}
 	void OnMouseDown()
 	{										 
-		//Debug.Log(GridPosition.X + " " + GridPosition.Y);
-		if (GameField.IsAnyMoving())
+		if (GameField.IsAnyMoving() || !IsAsteroid())
 			return;
 		if (State == SpaceObjectState.Default)
 		{
@@ -198,6 +214,7 @@ public class SpaceObject : MonoBehaviour
 		{ 'P', SpaceObjectType.PurpleAsteroid},
 		{ 'Y', SpaceObjectType.YellowAsteroid},
 		{ 'H', SpaceObjectType.BlackHole},
+		{ 'E', SpaceObjectType.EmptyCell }
 	};
 	private static readonly Dictionary<SpaceObjectType, Sprite> SpaceObjectTypesToSprites = new Dictionary<SpaceObjectType, Sprite>
 	{
@@ -206,6 +223,7 @@ public class SpaceObject : MonoBehaviour
 		{SpaceObjectType.BlueAsteroid, BlueAsteroidSprite},
 		{SpaceObjectType.PurpleAsteroid, PurpleAsteroidSprite},
 		{SpaceObjectType.YellowAsteroid, YellowAsteroidSprite},
+		{SpaceObjectType.EmptyCell, EmptyCellSprite}
 	};
 
 	private static readonly Dictionary<SpaceObjectType, Sprite> StableToUnstableSprites = new Dictionary<SpaceObjectType, Sprite>
