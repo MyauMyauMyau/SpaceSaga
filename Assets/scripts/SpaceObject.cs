@@ -151,15 +151,24 @@ public class SpaceObject : MonoBehaviour
 				GameField.Drop(GridPosition, new Coordinate(GridPosition.X, GridPosition.Y + 1));
 			}
 			// if downdrop is blocked
-			else if (GridPosition.X > 0 && GameField.Map[GridPosition.X - 1, GridPosition.Y] != null 
-				&& !GameField.Map[GridPosition.X - 1, GridPosition.Y].IsAsteroid() &&
-				GameField.Map[GridPosition.X - 1, GridPosition.Y + 1] == null)
-				GameField.Drop(GridPosition, new Coordinate(GridPosition.X - 1, GridPosition.Y + 1));
+			else if (GridPosition.X > 0 &&
+			         GameField.Map[GridPosition.X - 1, GridPosition.Y + 1] == null)
+			{
+				if ((GameField.Map[GridPosition.X - 1, GridPosition.Y] != null
+				&& !GameField.Map[GridPosition.X - 1, GridPosition.Y].IsAsteroid()) ||
+				(GameField.Map[GridPosition.X - 1, GridPosition.Y] == null && GridPosition.Y > 0 
+				&& GameField.Map[GridPosition.X - 1, GridPosition.Y - 1] != null && !GameField.Map[GridPosition.X - 1, GridPosition.Y - 1].IsAsteroid()))
+					GameField.Drop(GridPosition, new Coordinate(GridPosition.X - 1, GridPosition.Y + 1));
+			}
 			else if (GridPosition.X < GameField.Map.GetLength(0) - 1 &&
-				GameField.Map[GridPosition.X +1, GridPosition.Y] != null
-				&& !GameField.Map[GridPosition.X + 1, GridPosition.Y].IsAsteroid() &&
-				GameField.Map[GridPosition.X + 1, GridPosition.Y + 1] == null)
-				GameField.Drop(GridPosition, new Coordinate(GridPosition.X + 1, GridPosition.Y + 1));
+					 GameField.Map[GridPosition.X + 1, GridPosition.Y + 1] == null)
+			{
+				if ((GameField.Map[GridPosition.X + 1, GridPosition.Y] != null
+				&& !GameField.Map[GridPosition.X + 1, GridPosition.Y].IsAsteroid()) ||
+				(GameField.Map[GridPosition.X + 1, GridPosition.Y] == null && GridPosition.Y > 0
+				&& GameField.Map[GridPosition.X + 1, GridPosition.Y - 1] != null && !GameField.Map[GridPosition.X + 1, GridPosition.Y - 1].IsAsteroid()))
+					GameField.Drop(GridPosition, new Coordinate(GridPosition.X + 1, GridPosition.Y + 1));
+			}
 		}
 
 	}

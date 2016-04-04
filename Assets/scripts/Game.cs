@@ -14,7 +14,7 @@ namespace Assets.scripts
 
 		// Use this for initialization
 		public static GameObject SpaceObjectPrefab = Resources.Load("SpaceObjectPrefab", typeof(GameObject)) as GameObject;
-		public const int MAP_SIZE = 4;
+		public const int MAP_SIZE = 8;
 		private LevelInfo LevelInformation;
 		public static int TurnsLeft;
 		private void Start()
@@ -22,8 +22,8 @@ namespace Assets.scripts
 			TurnsLeft = 10;
 			//LevelInformation = JsonConvert.DeserializeObject<LevelInfo>(File.ReadAllText("Assets/levels/1.json"));
 			LevelInformation =
-			//new LevelInfo { Map = "GBPYYRPR GYGRRGPB RYGYYBRB GRYRGRPR RYGYPGPB GPGPYGRP RYRBGBRB GYGYYGPG" };
-			new LevelInfo { Map = "GBPY EYGR RYYE GRYR RYGY GPGP RYRB GYGY" };
+			new LevelInfo { Map = "GBPYYRPR GYGRRGPB RYGYYBRB GRREEEPR RYGYPGPB GPGPYGRP RYRBGBRB GYGYYGPG" };
+			//new LevelInfo { Map = "GBPY EYGR RYYE GRYR RYGY GPGP RYRB GYGY" };
 			GenerateMap();
 
 		}
