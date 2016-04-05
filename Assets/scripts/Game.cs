@@ -22,7 +22,7 @@ namespace Assets.scripts
 			TurnsLeft = 10;
 			//LevelInformation = JsonConvert.DeserializeObject<LevelInfo>(File.ReadAllText("Assets/levels/1.json"));
 			LevelInformation =
-			new LevelInfo { Map = "GBPYYRPR GYGRRGPB RYGYYBRB GRREEEPR RYGYPGPB GPGPYGRP RYRBGBRB GYGYYGPG" };
+			new LevelInfo { Map = "GBPYYRYY GYGRRYPB RYGYYBRB GRREEEPR RYGYPGPB GPGPYGRP RYRBGBRB GYGYYGPG" };
 			//new LevelInfo { Map = "GBPY EYGR RYYE GRYR RYGY GPGP RYRB GYGY" };
 			GenerateMap();
 
@@ -31,8 +31,8 @@ namespace Assets.scripts
 		// Update is called once per frame
 		private void Update()
 		{
-			if (TurnsLeft == 0)
-				Debug.Log("Game Is Finished");
+			//if (TurnsLeft == 0)
+				//Debug.Log("Game Is Finished");
 			GameField.CheckUpperBorder();
 			if (!GameField.IsAnyMoving())
 			{

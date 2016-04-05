@@ -54,11 +54,12 @@ namespace Assets.scripts
 		}
 		public static bool IsAnyCorrectMove()
 		{
-			var list = new List<Coordinate>();
 			for (int i = 0; i < Map.GetLength(0)-1; i++)
 			{
 				for (int j = 0; j < Map.GetLength(1); j++)
 				{
+					if (Map[i,j] == null || Map[i+1,j] == null)
+						continue;
 					if (!Map[i,j].IsAsteroid() || !Map[i+1,j].IsAsteroid())
 						continue;
 					var p1 = new Coordinate(i, j);
@@ -76,6 +77,8 @@ namespace Assets.scripts
 			{
 				for (int j = 0; j < Map.GetLength(1) - 1; j++)
 				{
+					if (Map[i, j] == null || Map[i, j+1] == null)
+						continue;
 					if (!Map[i, j].IsAsteroid() || !Map[i, j + 1].IsAsteroid())
 						continue;
 					var p1 = new Coordinate(i, j);
@@ -322,8 +325,9 @@ namespace Assets.scripts
 		{
 			for (int i = 0; i < listToDestroy.Count; i++)
 			{
-				if (Map[listToDestroy[i].X, listToDestroy[i].Y].IsUnstable)
+				if (Map[listToDestroy[i].X, listToDestroy[i].Y] != null && Map[listToDestroy[i].X, listToDestroy[i].Y].IsUnstable)
 				{
+					Debug.Log("unstable");
 					var bottomBoundX = Math.Max(0, listToDestroy[i].X - 2);
 					var bottomBoundY = Math.Max(0, listToDestroy[i].Y - 2);
 					var topBoundX = Math.Min(Map.GetLength(0) - 1, listToDestroy[i].X + 2);

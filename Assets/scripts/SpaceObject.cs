@@ -143,8 +143,8 @@ public class SpaceObject : MonoBehaviour
 		}
 		else
 			gameObject.GetComponentInChildren<Light>().enabled = false;
-
-		if (IsAsteroid() && GridPosition.Y != Game.MAP_SIZE - 1)
+								   
+		if (IsAsteroid() && State !=SpaceObjectState.Moving && GridPosition.Y != Game.MAP_SIZE - 1)
 		{
 			if (GameField.Map[GridPosition.X, GridPosition.Y + 1] == null)
 			{
