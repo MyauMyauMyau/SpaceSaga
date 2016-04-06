@@ -57,7 +57,12 @@ public class SpaceObject : MonoBehaviour
 		GridPosition = new Coordinate(x,y);
 		TypeOfObject = CharsToObjectTypes[type];
 		if (TypeOfObject == SpaceObjectType.BlackHole)
-			gameObject.GetComponentInChildren<Light>().enabled = true;
+		{
+			var light = gameObject.GetComponentInChildren<Light>();
+			light.enabled = true;
+			light.range = 1.33f;
+			light.color = Color.blue;
+		}
 		if (isUnstable)
 		{
 			gameObject.GetComponent<SpriteRenderer>().sprite = StableToUnstableSprites[TypeOfObject];
