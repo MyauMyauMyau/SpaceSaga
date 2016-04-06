@@ -12,6 +12,7 @@ namespace Assets.scripts
 		Moving,
 		Dropping,
 		WaitingForInitialising,
-		Growing
+		Growing,
+		Decreasing,
 	}
 }

@@ -11,6 +11,7 @@ using Random = System.Random;
 
 public class SpaceObject : MonoBehaviour
 {
+	private Coordinate blackHoleTarget;
 	public Coordinate GridPosition { get; set; }
 	public Vector3 Destination { get; set; }
 	public Coordinate PreviousPosition {get; set;}
@@ -26,13 +27,14 @@ public class SpaceObject : MonoBehaviour
 	public static Sprite UnstableRedAsteroidSprite = Resources.Load("2Nmet_red", typeof(Sprite)) as Sprite;
 	public static Sprite UnstablePurpleAsteroidSprite = Resources.Load("2Nmet_purple", typeof(Sprite)) as Sprite;
 	public static Sprite UnstableYellowAsteroidSprite = Resources.Load("2Nmet_yellow", typeof(Sprite)) as Sprite;
+	public static Sprite BlackHoleSprite = Resources.Load("3Black_hole_01", typeof(Sprite)) as Sprite;
 	public const float BaseDropSpeed = 10f;
 	public float DropSpeed;
 	public float MoveSpeed;
 	public float GrowSpeed;
 	public float StartTime = 0;
 	public float Delay = 0;
-
+	private bool blackHoleHasJumped;
 	public bool IsUnstable { get; set; }
 	public SpaceObjectState State { get; set; }
 	public bool UpdatedField = false;
@@ -48,12 +50,14 @@ public class SpaceObject : MonoBehaviour
 	}
 	public void Initialise(int x, int y, char type, float delay = 0, bool isUnstable = false)
 	{
-		DropSpeed = BaseDropSpeed;
-		MoveSpeed = 5f;
+		DropSpeed = BaseDropSpeed*2;
+		MoveSpeed = 10f;
 		GrowSpeed = 0.05f;
 		IsUnstable = isUnstable;
 		GridPosition = new Coordinate(x,y);
 		TypeOfObject = CharsToObjectTypes[type];
+		if (TypeOfObject == SpaceObjectType.BlackHole)
+			gameObject.GetComponentInChildren<Light>().enabled = true;
 		if (isUnstable)
 		{
 			gameObject.GetComponent<SpriteRenderer>().sprite = StableToUnstableSprites[TypeOfObject];
@@ -88,7 +92,7 @@ public class SpaceObject : MonoBehaviour
 			State = SpaceObjectState.Dropping;
 		}
 
-		if (gameObject.transform.localScale.x < 1)
+		if (gameObject.transform.localScale.x < 1 && State != SpaceObjectState.Decreasing)
 		{
 			Vector3 scale = transform.localScale;
 			if (IsUnstable)
@@ -107,6 +111,10 @@ public class SpaceObject : MonoBehaviour
 		}
 		else if (State == SpaceObjectState.Growing)
 			State = SpaceObjectState.Default;
+		if (TypeOfObject == SpaceObjectType.BlackHole)
+		{
+			HandleBlackHole();
+		}
 		if (IsUnstable && rnd.Next(2) == 1)
 		{
 			Vector3 scale = transform.localScale;
@@ -126,6 +134,7 @@ public class SpaceObject : MonoBehaviour
 					{
 						GameField.MoveIsFinished = true;
 						Game.TurnsLeft--;
+						Game.instance.Update();
 					}
 				}
 				State = SpaceObjectState.Default;
@@ -137,12 +146,8 @@ public class SpaceObject : MonoBehaviour
 				transform.position = Vector3.MoveTowards(transform.position, Destination, step);
 			}
 		}
-		else if (State == SpaceObjectState.Clicked)
-		{
-			gameObject.GetComponentInChildren<Light>().enabled = true;
-		}
-		else
-			gameObject.GetComponentInChildren<Light>().enabled = false;
+		if (IsAsteroid())
+			gameObject.GetComponentInChildren<Light>().enabled = State == SpaceObjectState.Clicked;
 								   
 		if (IsAsteroid() && State !=SpaceObjectState.Moving && GridPosition.Y != Game.MAP_SIZE - 1)
 		{
@@ -172,6 +177,78 @@ public class SpaceObject : MonoBehaviour
 		}
 
 	}
+
+	private void HandleBlackHole()
+	{
+		if (State == SpaceObjectState.Decreasing)
+		{
+			Vector3 scale = transform.localScale;
+			scale.x -= GrowSpeed/1.5f;
+			scale.y -= GrowSpeed/1.5f;
+			if (scale.x <= 0.1)
+			{
+				State = SpaceObjectState.Growing;
+				GameField.Jump(GridPosition, blackHoleTarget);
+			}
+			transform.localScale = scale;
+		}
+		transform.Rotate(0f, 0f, -100f*Time.deltaTime);
+		if (Game.TurnsLeft%4 == 0) 
+		{
+			if (!blackHoleHasJumped && !GameField.IsAnyMoving())
+				JumpBlackHole();
+		}
+		else
+			blackHoleHasJumped = false;
+	}
+
+	private void JumpBlackHole()
+	{
+		blackHoleHasJumped = true;
+		var map = GameField.Map;
+		var unsuitableAsteroids = new List<SpaceObjectType>();
+		if (GridPosition.X > 0 && map[GridPosition.X - 1, GridPosition.Y] != null)
+			unsuitableAsteroids.Add(map[GridPosition.X - 1, GridPosition.Y].TypeOfObject);
+		if (GridPosition.Y > 0 && map[GridPosition.X, GridPosition.Y - 1] != null)
+			unsuitableAsteroids.Add(map[GridPosition.X, GridPosition.Y - 1].TypeOfObject);
+		if (GridPosition.X < map.GetLength(0) - 1 && map[GridPosition.X + 1, GridPosition.Y] != null)
+			unsuitableAsteroids.Add(map[GridPosition.X + 1, GridPosition.Y].TypeOfObject);
+		if (GridPosition.Y < map.GetLength(1) - 1 && map[GridPosition.X, GridPosition.Y + 1] != null)
+			unsuitableAsteroids.Add(map[GridPosition.X, GridPosition.Y + 1].TypeOfObject);
+		unsuitableAsteroids = unsuitableAsteroids.Distinct().ToList();
+		var coords = new List<Coordinate>();
+		for (int i = 0; i < map.GetLength(0); i++)
+		{
+			for (int j = 0; j < map.GetLength(1); j++)
+			{
+				if (map[i, j] != null && map[i, j].IsAsteroid() && !unsuitableAsteroids.Contains(map[i, j].TypeOfObject)
+				    &&
+				    ((j < map.GetLength(1) - 1 && map[i, j + 1] != null &&
+					map[i, j].TypeOfObject == map[i, j + 1].TypeOfObject) ||
+					(j > 0 && map[i, j - 1] != null &&
+					map[i, j].TypeOfObject == map[i, j - 1].TypeOfObject) ||
+					(i > 0&& map[i - 1,j] != null &&
+					map[i, j].TypeOfObject == map[i - 1, j].TypeOfObject) ||
+					 (i < map.GetLength(0) - 1 && map[i + 1, j] != null &&
+					 map[i, j].TypeOfObject == map[i + 1, j].TypeOfObject)))
+				{
+					coords.Add(map[i, j].GridPosition);
+					if (map[i, j].IsUnstable)
+					{
+						State = SpaceObjectState.Decreasing;
+						blackHoleTarget = new Coordinate(i,j);
+						return;
+					}
+				}
+			} 
+		}
+		if (coords.Count > 0)
+		{
+			State = SpaceObjectState.Decreasing;
+			blackHoleTarget = coords.ElementAt(rnd.Next(coords.Count));	
+		}
+	}
+
 	void OnMouseDown()
 	{										 
 		if (GameField.IsAnyMoving() || !IsAsteroid())
@@ -232,7 +309,8 @@ public class SpaceObject : MonoBehaviour
 		{SpaceObjectType.BlueAsteroid, BlueAsteroidSprite},
 		{SpaceObjectType.PurpleAsteroid, PurpleAsteroidSprite},
 		{SpaceObjectType.YellowAsteroid, YellowAsteroidSprite},
-		{SpaceObjectType.EmptyCell, EmptyCellSprite}
+		{SpaceObjectType.EmptyCell, EmptyCellSprite},
+		{SpaceObjectType.BlackHole, BlackHoleSprite }
 	};
 
 	private static readonly Dictionary<SpaceObjectType, Sprite> StableToUnstableSprites = new Dictionary<SpaceObjectType, Sprite>
@@ -242,6 +320,7 @@ public class SpaceObject : MonoBehaviour
 		{SpaceObjectType.BlueAsteroid, UnstableBlueAsteroidSprite},
 		{SpaceObjectType.PurpleAsteroid, UnstablePurpleAsteroidSprite},
 		{SpaceObjectType.YellowAsteroid, UnstableYellowAsteroidSprite},
+		
 	};
 
 	private static readonly List<SpaceObjectType> AsteroidTypes = new List<SpaceObjectType>()

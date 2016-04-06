@@ -129,6 +129,18 @@ namespace Assets.scripts
 			ClickedObject = null;
 			MoveIsFinished = !MoveIsFinished;
 		}
+		public static void Jump(Coordinate p1, Coordinate p2)
+		{
+			Map[p1.X, p1.Y].Move(p2);
+			Map[p2.X, p2.Y].Move(p1);
+			Map.SwapArrayElements(p1, p2);
+			var temp = Map[p1.X, p1.Y].transform.position;
+			Map[p1.X, p1.Y].transform.position = Map[p2.X, p2.Y].transform.position;
+			Map[p2.X, p2.Y].transform.position = temp;
+
+
+
+		}
 
 		public static void Drop(Coordinate p1, Coordinate p2)
 		{
@@ -403,7 +415,8 @@ namespace Assets.scripts
 				for (int j = 0; j < Game.MAP_SIZE; j++)
 					if (Map[i,j] != null && 
 						(Map[i, j].State == SpaceObjectState.Dropping 
-						|| Map[i, j].State == SpaceObjectState.Moving || Map[i, j].State == SpaceObjectState.Growing))
+						|| Map[i, j].State == SpaceObjectState.Moving || Map[i, j].State == SpaceObjectState.Growing
+						|| Map[i, j].State == SpaceObjectState.Decreasing))
 							return true;
 			return false;
 		}
