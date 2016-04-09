@@ -137,9 +137,6 @@ namespace Assets.scripts
 			var temp = Map[p1.X, p1.Y].transform.position;
 			Map[p1.X, p1.Y].transform.position = Map[p2.X, p2.Y].transform.position;
 			Map[p2.X, p2.Y].transform.position = temp;
-
-
-
 		}
 
 		public static void Drop(Coordinate p1, Coordinate p2)
@@ -242,7 +239,6 @@ namespace Assets.scripts
 				.Where(x => Map[x.X, x.Y] != null && Map[x.X, x.Y].IsAsteroid()))
 			{
 				Map[coordinate.X, coordinate.Y].DestroyAsteroid();
-				Map[coordinate.X, coordinate.Y] = null;
 			}
 			foreach (var coord in unstableList)
 			{
@@ -324,7 +320,6 @@ namespace Assets.scripts
 				.Where(x=>Map[x.X, x.Y] != null && Map[x.X, x.Y].IsAsteroid()))
 			{
 				Map[coordinate.X, coordinate.Y].DestroyAsteroid();
-				Map[coordinate.X, coordinate.Y] = null;
 			}
 			foreach (var coord in unstableList)
 			{

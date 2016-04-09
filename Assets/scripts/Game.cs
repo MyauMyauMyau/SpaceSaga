@@ -24,7 +24,7 @@ namespace Assets.scripts
 			TurnsLeft = 10;
 			//LevelInformation = JsonConvert.DeserializeObject<LevelInfo>(File.ReadAllText("Assets/levels/1.json"));
 			LevelInformation =
-			new LevelInfo { Map = "GBPYYRYY GHGRRYHB RYGYYBRB GRREEEPR RYGYPGPB GPGPYGRP RYRBGBRB GYGYYGPG" };
+			new LevelInfo { Map = "GBPYYRYY GHGRRYHB RYGYYBIB GRREEEPR RYGYPGPB GPGPYGRP RYRBGBRB GYGYYGPG" };
 			//new LevelInfo { Map = "GBPY EYGR RYYE GRYR RYGY GPGP RYRB GYGY" };
 			GenerateMap();
 

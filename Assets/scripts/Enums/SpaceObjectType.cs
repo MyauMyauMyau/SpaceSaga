@@ -13,6 +13,7 @@ namespace Assets.scripts
 		YellowAsteroid,
 		GreenAsteroid,
 		BlackHole,
+		Ice,
 		EmptyCell
 			
 	}
