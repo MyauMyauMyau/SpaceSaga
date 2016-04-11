@@ -219,13 +219,12 @@ namespace Assets.scripts
 				}
 				if (bufRowList.Count >= 2)
 				{
-					//Debug.Log("yahoo");
 					foreach (var coordinate in bufRowList)
 					{
 						listToDestroy.Add(coordinate);
 					}
 					if (!unstableIsAdded)
-					{
+					{					 
 						Map[asteroid.X, asteroid.Y].DestroyAsteroid();
 						listToDestroy.Remove(asteroid);
 						unstableList.Add(asteroid);
@@ -332,9 +331,9 @@ namespace Assets.scripts
 		{
 			for (int i = 0; i < listToDestroy.Count; i++)
 			{
-				if (Map[listToDestroy[i].X, listToDestroy[i].Y] != null && Map[listToDestroy[i].X, listToDestroy[i].Y].IsUnstable)
+				if (Map[listToDestroy[i].X, listToDestroy[i].Y] != null && Map[listToDestroy[i].X, listToDestroy[i].Y].IsUnstable
+					&& !Map[listToDestroy[i].X, listToDestroy[i].Y].IsFrozen)
 				{
-					Debug.Log("unstable");
 					var bottomBoundX = Math.Max(0, listToDestroy[i].X - 2);
 					var bottomBoundY = Math.Max(0, listToDestroy[i].Y - 2);
 					var topBoundX = Math.Min(Map.GetLength(0) - 1, listToDestroy[i].X + 2);
@@ -353,39 +352,6 @@ namespace Assets.scripts
 							listToDestroy.Add(coord);
 					}
 				}
-			}
-		}
-
-		private static void DropAsteroids()
-		{
-			var delay = 0f;
-			var step = 3f / SpaceObject.BaseDropSpeed;
-			Random r = new Random();
-			for (int i = 0; i < Map.GetLength(0); i++)
-			{
-				delay = step/3;
-				for (int j = Map.GetLength(1) - 1; j >= 0; j--)
-				{
-					if (Map[i, j] != null)
-						continue;
-					var depth = j;
-					while ( depth > 0 && Map[i, depth] == null)
-					{
-						depth--;
-					}
-					if (Map[i, 0] == null)
-					{
-						Game.SpaceObjectCreate(i, 0, AsteroidsList.ElementAt(r.Next(5)), delay);
-						delay += step;
-					}
-					if (depth >= 0  && depth != j && Map[i, depth] != null)
-					{
-						Map[i, j] = Map[i, depth];
-						Map[i, depth] = null;
-						Map[i,j].GridPosition = new Coordinate(i, j);
-						Map[i,j].Destination = GetVectorFromCoord(i,j);
-					}
-				}	 
 			}
 		}
 
